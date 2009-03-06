@@ -12,8 +12,20 @@ class TokyoCacheCow
         d['flags'] = d['flags'].to_i
       end
       
-      if d && (d['exptime']  == 0 || d['exptime'] > Time.now.to_i)
-        d
+      if d
+        if d['expires']
+          if d['expires'].to_i < Time.now.to_i
+            nil
+          else
+            delete(key)
+            nil
+          end
+        elsif d['exptime'] == 0 || d['exptime'] > Time.now.to_i
+          d
+        else
+          delete(key)
+          nil
+        end
       else
         delete(key)
         nil
@@ -44,17 +56,26 @@ class TokyoCacheCow
       @cache.put(key, data)
     end
 
-    def putkeep(key, data)
+    def put_keep(key, data)
       @cache.putkeep(key, data)
     end
 
-    def putover(key, data)
-      @cache.get(key) ?
-        @cache.put(key, data) : nil
+    def put_over(key, data)
+      if d = @cache.get(key)
+        if d['expires'] && d['expires'].to_i < Time.now.to_i
+          nil
+        else
+          @cache.put(key, data)
+        end
+      end
     end
 
     def delete(key)
       @cache.delete(key)
+    end
+
+    def delete_expire(key, timeout)
+      d = get(key) and put(key, d.merge({'expires' => timeout}))
     end
 
     def delete_match(match)

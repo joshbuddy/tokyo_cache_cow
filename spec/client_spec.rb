@@ -17,7 +17,7 @@ class MemCache
 
     rval
   end
-  
+
   def delete_match( key, time=nil )
     raise MemCacheError, "no active servers" unless self.active?
     raise MemCacheError, "readonly cache" if self.readonly?
@@ -66,6 +66,31 @@ describe 'memcache server' do
     cache.get("key-set-123").should == nil
   end
   
+  it "should delete (with expiry)" do
+    cache.set('delete-with-expiry', 'hillbillies')
+    cache.get('delete-with-expiry').should == 'hillbillies'
+    cache.delete('delete-with-expiry', 3)
+    cache.get('delete-with-expiry').should == nil
+    cache.replace('delete-with-expiry', 'more hillbillies')
+    cache.get('delete-with-expiry').should == nil
+    sleep(5)
+    cache.get('delete-with-expiry').should == nil
+    cache.set('delete-with-expiry', 'more hillbillies')
+    cache.get('delete-with-expiry').should == 'more hillbillies'
+  end
+  
+  it "should delete (with expiry) and set again" do
+    cache.set('delete-with-expiry', 'hillbillies')
+    cache.get('delete-with-expiry').should == 'hillbillies'
+    cache.delete('delete-with-expiry', 3)
+    cache.get('delete-with-expiry').should == nil
+    cache.set('delete-with-expiry', 'more hillbillies')
+    cache.get('delete-with-expiry').should == 'more hillbillies'
+    sleep(5)
+    cache.get('delete-with-expiry').should == 'more hillbillies'
+  end
+  
+
   it "should delete_match" do
     100.times do
       cache.set("asd/qwe/zxc/10","you should never see me")
@@ -80,6 +105,18 @@ describe 'memcache server' do
       cache.set("asd/qwe/zxc/22","you should never see me")
       cache.set("asd/qwe/zxc/32","you should never see me")
       cache.set("asd/qwe/zxc/42","you should never see me")
+      cache.set("asd/qwe/zxc/101","you should never see me")
+      cache.set("asd/qwe/zxc/201","you should never see me")
+      cache.set("asd/qwe/zxc/301","you should never see me")
+      cache.set("asd/qwe/zxc/401","you should never see me")
+      cache.set("asd/qwe/zxc/111","you should never see me")
+      cache.set("asd/qwe/zxc/211","you should never see me")
+      cache.set("asd/qwe/zxc/311","you should never see me")
+      cache.set("asd/qwe/zxc/411","you should never see me")
+      cache.set("asd/qwe/zxc/121","you should never see me")
+      cache.set("asd/qwe/zxc/221","you should never see me")
+      cache.set("asd/qwe/zxc/321","you should never see me")
+      cache.set("asd/qwe/zxc/421","you should never see me")
       cache.delete_match("asd/qwe/zxc")
       cache.get("asd/qwe/zxc/40").should == nil
       cache.get("asd/qwe/zxc/30").should == nil
@@ -93,9 +130,21 @@ describe 'memcache server' do
       cache.get("asd/qwe/zxc/32").should == nil
       cache.get("asd/qwe/zxc/22").should == nil
       cache.get("asd/qwe/zxc/12").should == nil
+      cache.get("asd/qwe/zxc/401").should == nil
+      cache.get("asd/qwe/zxc/301").should == nil
+      cache.get("asd/qwe/zxc/201").should == nil
+      cache.get("asd/qwe/zxc/101").should == nil
+      cache.get("asd/qwe/zxc/411").should == nil
+      cache.get("asd/qwe/zxc/311").should == nil
+      cache.get("asd/qwe/zxc/211").should == nil
+      cache.get("asd/qwe/zxc/111").should == nil
+      cache.get("asd/qwe/zxc/421").should == nil
+      cache.get("asd/qwe/zxc/321").should == nil
+      cache.get("asd/qwe/zxc/221").should == nil
+      cache.get("asd/qwe/zxc/121").should == nil
     end
   end
-  
+
   it "should expire" do
     cache.set("expiring key","you should never see me", 1)
     sleep(3)
