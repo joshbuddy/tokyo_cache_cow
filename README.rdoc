@@ -12,7 +12,7 @@ You'll need the eventmachine gem installed. As well, you'll have to install Toky
 
 == Example (using the rails client under script/console)
   
-Lets write four keys: _other_key_, _test_key_, _test_key2_ and _test_key3_.
+Lets write four keys: <i>other_key</i>, <i>test_key</i>, <i>test_key2</i> and <i>test_key3</i>.
   
   >> Rails.cache.write('other_key', 'other_value')
   => true
@@ -23,42 +23,42 @@ Lets write four keys: _other_key_, _test_key_, _test_key2_ and _test_key3_.
   >> Rails.cache.write('test_key3', 'test_value3')
   => true
 
-Read back _test_key_ and make sure life is still good.
+Read back <i>test_key</i> and make sure life is still good.
 
   >> Rails.cache.read('test_key2')
   => "test_value2"
 
-But lets delete _test_key2_ for fun.
+But lets delete <i>test_key2</i> for fun.
 
   >> Rails.cache.delete('test_key2')
   => true
 
-Confirm that _test_key2_ is really gone.
+Confirm that <i>test_key2</i> is really gone.
 
   >> Rails.cache.read('test_key2')
   => nil
 
-.. but our other keys (namely, _test_key_) are just fine, thank you.
+.. but our other keys (namely, <i>test_key</i>) are just fine, thank you.
 
   >> Rails.cache.read('test_key')
   => "test_value"
 
-.. lets nuke EVERYTHING with _test_key_ in it though.
+.. lets nuke *EVERYTHING* with <i>test_key</i> in it though.
 
   >> Rails.cache.delete_matched('test_key')
   => true
 
-Now _test_key_ and _test_key3_ are both nuked.
+Now <i>test_key</i> and <i>test_key3</i> are both nuked.
 
   >> Rails.cache.read('test_key')
   => nil
   >> Rails.cache.read('test_key3')
   => nil
 
-But _other_key_ is still peachy.
+But <i>other_key</i> is still peachy.
 
->> Rails.cache.read('other_key')
-=> "other_value"
+  >> Rails.cache.read('other_key')
+  => "other_value"
 
 == Usage
 
