@@ -2,6 +2,64 @@
 
 Tokyo Cache Cow is MemCache protocol speaking cache server. It offers the ability to delete keys based on a substring.
 
+== Motivation
+
+Cache sweepers in rails do not currently operate with memcache because the memcache server itself does not support key matching removal operations. After reading http://www.igvita.com/2009/02/13/tokyo-cabinet-beyond-key-value-store/ and seeing the performance characteristics of that database, I thought I'd give it a go. Event Machine does the heavy lifting on the network end. Performance is currently comparable to memcached.
+
+== Prerequisites
+
+You'll need the eventmachine gem installed. As well, you'll have to install Tokyo Cabinet itself (available at http://tokyocabinet.sourceforge.net/index.html) and the Tokyo Cabinet Ruby bindings (available at http://tokyocabinet.sourceforge.net/rubypkg/)
+
+== Example (using the rails client under script/console)
+  
+Lets write four keys: _other_key_, _test_key_, _test_key2_ and _test_key3_.
+  
+  >> Rails.cache.write('other_key', 'other_value')
+  => true
+  >> Rails.cache.write('test_key', 'test_value')
+  => true
+  >> Rails.cache.write('test_key2', 'test_value2')
+  => true
+  >> Rails.cache.write('test_key3', 'test_value3')
+  => true
+
+Read back _test_key_ and make sure life is still good.
+
+  >> Rails.cache.read('test_key2')
+  => "test_value2"
+
+But lets delete _test_key2_ for fun.
+
+  >> Rails.cache.delete('test_key2')
+  => true
+
+Confirm that _test_key2_ is really gone.
+
+  >> Rails.cache.read('test_key2')
+  => nil
+
+.. but our other keys (namely, _test_key_) are just fine, thank you.
+
+  >> Rails.cache.read('test_key')
+  => "test_value"
+
+.. lets nuke EVERYTHING with _test_key_ in it though.
+
+  >> Rails.cache.delete_matched('test_key')
+  => true
+
+Now _test_key_ and _test_key3_ are both nuked.
+
+  >> Rails.cache.read('test_key')
+  => nil
+  >> Rails.cache.read('test_key3')
+  => nil
+
+But _other_key_ is still peachy.
+
+>> Rails.cache.read('other_key')
+=> "other_value"
+
 == Usage
 
 === Server
@@ -22,4 +80,8 @@ Any standard memcache client will do, however, there is a special initialize for
 
   script/plugin install git://github.com/joshbuddy/tokyo-cache-cow.git
   
+== Caveats
+
+Right now there is no compression on disk. Things could get big, but Tokyo Cabinet does support various compression schemes, so exposing that to the runner should be trivial. Potentially performance could degrade after time, but I have yet to seriously investigate if thats the case.
+
 Feel the moo.
