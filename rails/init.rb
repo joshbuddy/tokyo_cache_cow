@@ -4,7 +4,7 @@ module ::ActiveSupport
 
       def delete_matched(matcher, options = nil) # :nodoc:
         super
-        response = @data.delete_match(key)
+        response = @data.delete_match(matcher)
         response == Response::DELETED
       rescue MemCache::MemCacheError => e
         logger.error("MemCacheError (#{e}): #{e.message}")
@@ -28,7 +28,7 @@ class ::MemCache
     raise MemCacheError, "No connection to server" if sock.nil?
 
     begin
-      sock.write "delete #{cache_key}\r\n"
+      sock.write "delete_match #{cache_key}\r\n"
       result = sock.gets
       raise_on_error_response! result
       result
