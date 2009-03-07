@@ -1,0 +1,25 @@
+= Tokyo Cache Cow
+
+Tokyo Cache Cow is MemCache protocol speaking cache server. It offers the ability to delete keys based on a substring.
+
+== Usage
+
+=== Server
+
+
+  >> ruby -rubygems runner.rb --help
+
+--------------
+
+  Usage: runner.rb [options]
+    -p, --port[OPTIONAL]             Port (default: 11211)
+    -h, --host[OPTIONAL]             Host (default: 0.0.0.0)
+        --help                       Show this help message.
+
+=== Client
+
+Any standard memcache client will do, however, there is a special initialize for Rails to enable delete_matched functionality within the built-in memcache client there. To install this into rails:
+
+  script/plugin install git://github.com/joshbuddy/tokyo-cache-cow.git
+  
+Feel the moo.
