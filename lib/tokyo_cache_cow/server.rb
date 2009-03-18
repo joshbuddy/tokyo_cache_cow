@@ -70,6 +70,20 @@ class TokyoCacheCow
       command = ss.scan_until(/ /)
       command.slice!(command.size - 1)
       case command
+      when 'get', 'gets'
+        keys = ss.scan_until(/\r\n/).split(/\s+/)
+        
+        keys.each do |k|
+          return unless validate_key(k)
+          if data = @cache.get(k)
+            command == 'get' ?
+              send_data(GetValueReply % [k, data['flags'], data['data'].size]) : 
+              send_data(CasValueReply % [k, data['flags'], data['data'].size, data['data'].hash])
+            send_data(data['data'])
+            send_data(Terminator)
+          end
+        end
+        send_data(EndReply)
       when 'set'
         SetCommand.match(ss.scan_until(/\r\n/))
         (key, flags, exptime, bytes, noreply) = [$1, $2, process_time($3), $4, !$5.nil?]
@@ -97,20 +111,7 @@ class TokyoCacheCow
         send_data(@cache.prepend(key, ss.rest[0, bytes.to_i]) ?
           StoredReply : NotStoredReply)
       when 'cas'
-      when 'get', 'gets'
-        keys = ss.scan_until(/\r\n/).split(/\s+/)
-        
-        keys.each do |k|
-          return unless validate_key(k)
-          if data = @cache.get(k)
-            command == 'get' ?
-              send_data(GetValueReply % [k, data['flags'], data['data'].size]) : 
-              send_data(CasValueReply % [k, data['flags'], data['data'].size, data['data'].hash])
-            send_data(data['data'])
-            send_data(Terminator)
-          end
-        end
-        send_data(EndReply)
+        # do something
       when 'delete'
         case ss.scan_until(/\r\n/)
         when DeleteWithTimeoutCommand
