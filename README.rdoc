@@ -60,6 +60,7 @@ But <i>other_key</i> is still peachy.
   >> Rails.cache.read('other_key')
   => "other_value"
 
+
 == Usage
 
 === Server

@@ -90,7 +90,6 @@ describe 'memcache server' do
     cache.get('delete-with-expiry').should == 'more hillbillies'
   end
   
-
   it "should delete_match" do
     100.times do
       cache.set("asd/qwe/zxc/10","you should never see me")
