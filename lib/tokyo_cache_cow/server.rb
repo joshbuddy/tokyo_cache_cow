@@ -1,5 +1,6 @@
 require 'strscan'
 require 'eventmachine'
+
 class TokyoCacheCow
   class Server < EventMachine::Connection
     

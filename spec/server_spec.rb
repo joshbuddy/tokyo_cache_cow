@@ -2,7 +2,6 @@ require 'rubygems'
 require 'memcached'
 require 'benchmark'
 
-puts "starting memcached"
 cache = Memcached.new('127.0.0.1:11211')
 
 describe 'memcache server' do
@@ -12,10 +11,8 @@ describe 'memcache server' do
   end
   
   it "should get & set" do
-    10000.times do |i|
-      cache.set('asd', "qweqweasd #{i}")
-      cache.get('asd').should == "qweqweasd #{i}"
-    end
+    cache.set('asd', "qweqweasd")
+    cache.get('asd').should == "qweqweasd"
   end
   
   it "should delete" do

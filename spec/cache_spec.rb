@@ -1,7 +1,7 @@
 require 'benchmark'
-require 'lib/tokyo_cache_cow/mem_cache'
+require 'lib/tokyo_cache_cow/tokyo_cabinet_memcache'
 
-cache = TokyoCacheCow::MemCache.new('/tmp/tcc1')
+cache = TokyoCacheCow::TokyoCabinetMemcache.new('/tmp/tcc1')
 
 describe 'memcache cache' do
   

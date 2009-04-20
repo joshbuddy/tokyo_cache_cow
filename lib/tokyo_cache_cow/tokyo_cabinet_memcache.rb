@@ -1,7 +1,7 @@
 require 'tokyocabinet'
 
 class TokyoCacheCow
-  class MemCache
+  class TokyoCabinetMemcache
 
     include TokyoCabinet
 
