@@ -1,3 +1,21 @@
+require 'rubygems'
+require 'lib/tokyo_cache_cow'
+
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |s|
+    s.name = "tokyo_cache_cow"
+    s.description = s.summary = ""
+    s.email = "joshbuddy@gmail.com"
+    s.homepage = "http://github.com/joshbuddy/tokyo_cache_cow"
+    s.authors = ["Joshua Hull"]
+    s.files = FileList["[A-Z]*", "{lib,spec,rails,bin}/**/*"]
+    s.executables = ['tokyo_cache_cow']
+  end
+rescue LoadError
+  puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
+end
+
 require 'spec'
 require 'spec/rake/spectask'
 

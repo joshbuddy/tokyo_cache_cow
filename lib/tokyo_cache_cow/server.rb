@@ -1,45 +1,55 @@
 require 'strscan'
-
+require 'eventmachine'
 class TokyoCacheCow
   class Server < EventMachine::Connection
     
     Terminator = "\r\n"
     
     #set
-    SetCommand = /(.*) (\d+) (\d+) (\d+)( noreply)?/
-    CasCommand = /(.*) (\d+) (\d+) (\d+) (\d+)( noreply)?/
+    SetCommand = /(\S+) +(\d+) +(\d+) +(\d+)( +noreply)?/
+    CasCommand = /(\S+) +(\d+) +(\d+) +(\d+) +(\d+)( +noreply)?/
     
     StoredReply = "STORED\r\n"
     NotStoredReply = "NOT_STORED\r\n"
     ExistsReply = "EXISTS\r\n"
     NotFoundReply = "NOT_FOUND\r\n"
     
-    EndReply = "END\r\n"
-    
     GetValueReply = "VALUE %s %d %d\r\n"
     CasValueReply = "VALUE %d %d %d %d\r\n"
+    EndReply = "END\r\n"
     
     #delete
-    DeleteCommand = /(.*)( noreply)?/
-    DeleteWithTimeoutCommand = /(.*) (\d*)( noreply)?/
+    DeleteCommand = /(\S+) *(noreply)?/
+    DeleteWithTimeoutCommand = /(\S+) +(\d+) *(noreply)?/
     
     DeletedReply = "DELETED\r\n"
     NotDeletedReply = "NOT_DELETED\r\n"
     
     #delete_match
-    DeleteMatchCommand = /(.*)( noreply)?/
+    DeleteMatchCommand = /(\S+)( +noreply)?/
 
     #Increment/Decrement
-    IncrementDecrementCommand = /(.*) (\d+)( noreply)?/
+    IncrementDecrementCommand = /(\S+) +(\d+)( +noreply)?/
     
     ValueReply = "%d\r\n"
     
     #errors
+    OK = "OK\r\n" 
     Error = "ERROR\r\n" 
     ClientError = "CLIENT_ERROR %s\r\n"
     ServerError = "SERVER_ERROR %s\r\n"
     
+    TerminatorRegex = /\r\n/
+    
     attr_accessor :cache
+    
+    def send_client_error(message = "invalid arguments")
+      send_data(ClientError % message.to_s)
+    end
+    
+    def send_server_error(message = "there was a problem")
+      send_data(ServerError % message.to_s)
+    end
     
     def validate_key(key)
       if key.nil?
@@ -55,105 +65,110 @@ class TokyoCacheCow
       end
     end
     
-    def process_time(time)
-      time = case time_i = Integer(time)
-      when 0: '0'
-      when 1..(60*60*24*30) : (Time.now.to_i + time_i).to_s
-      else time
-      end
-    end
-    
     def receive_data(data)
-      send_data(Error) and return unless data.index("\r\n")
-      
       ss = StringScanner.new(data)
-      command = ss.scan_until(/ /)
-      command.slice!(command.size - 1)
-      case command
-      when 'get', 'gets'
-        keys = ss.scan_until(/\r\n/).split(/\s+/)
-        
-        keys.each do |k|
-          return unless validate_key(k)
-          if data = @cache.get(k)
-            command == 'get' ?
-              send_data(GetValueReply % [k, data['flags'], data['data'].size]) : 
-              send_data(CasValueReply % [k, data['flags'], data['data'].size, data['data'].hash])
-            send_data(data['data'])
-            send_data(Terminator)
+      
+      while part = ss.scan_until(TerminatorRegex)
+        begin
+          command_argument_separator_index = part.index(/\s/)
+          command = part[0, command_argument_separator_index]
+          args = part[command_argument_separator_index + 1, part.size - command_argument_separator_index - 3]
+          case command
+          when 'get', 'gets'
+            keys = args.split(/\s+/)
+            keys.each do |k|
+              next unless validate_key(k)
+              if data = @cache.get(k)
+                if command == 'get'
+                  send_data(GetValueReply % [k, data[:flags], data[:value].size])
+                else
+                  send_data(CasValueReply % [k, data[:flags], data[:value].size, data[:value].hash])
+                end
+                send_data(data[:value])
+                send_data(Terminator)
+              end
+            end
+            send_data(EndReply)
+          when 'set'
+            SetCommand.match(args) or (send_client_error and next)
+            (key, flags, expires, bytes, noreply) = [$1, Integer($2), Integer($3), Integer($4), !$5.nil?]
+            next unless validate_key(key)
+            send_data(@cache.set(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
+              StoredReply : NotStoredReply)
+            ss.pos += bytes + 2 
+          when 'add'
+            SetCommand.match(args)
+            (key, flags, expires, bytes, noreply) = [$1, $2.to_i, $3.to_i, $4, !$5.nil?]
+            send_data(@cache.add(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
+              StoredReply : NotStoredReply)
+            ss.pos += bytes + 2 
+          when 'replace'
+            SetCommand.match(args)
+            (key, flags, expires, bytes, noreply) = [$1, $2.to_i, $3.to_i, $4, !$5.nil?]
+            send_data(@cache.replace(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
+              StoredReply : NotStoredReply)
+            ss.pos += bytes + 2 
+          when 'append'
+            SetCommand.match(args)
+            (key, flags, expires, bytes, noreply) = [$1, $2.to_i, $3.to_i, $4, !$5.nil?]
+            send_data(@cache.append(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
+              StoredReply : NotStoredReply)
+            ss.pos += bytes + 2 
+          when 'prepend'
+            SetCommand.match(args)
+            (key, flags, expires, bytes, noreply) = [$1, $2.to_i, $3.to_i, $4, !$5.nil?]
+            send_data(@cache.prepend(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
+              StoredReply : NotStoredReply)
+            ss.pos += bytes + 2 
+          when 'cas'
+            # do something
+          when 'delete'
+            case args
+            when DeleteWithTimeoutCommand
+              (key, timeout, noreply) = [$1.chomp, $2, !$3.nil?]
+              next unless validate_key(key)
+              send_data(@cache.delete_expire(key, timeout) ?
+                DeletedReply : NotDeletedReply)
+            when DeleteCommand
+              (key, noreply) = [$1.chomp, !$2.nil?]
+              next unless validate_key(key)
+              send_data @cache.delete(key) ?
+                DeletedReply : NotDeletedReply
+            end
+          when 'delete_match'
+            DeleteMatchCommand.match(args)
+            (key, noreply) = [$1.chomp, !$2.nil?]
+            next unless validate_key(key)
+            @cache.delete_match(key)
+            send_data(DeletedReply)
+          when 'incr', 'decr'
+            IncrementDecrementCommand.match(args)
+            (key, value, noreply) = [$1, $2.to_i, !$3.nil?]
+            next unless validate_key(key)
+            send_data(if d = @cache.get(key)
+              value = -value if command == 'decr'
+              d['data'] = (val = (d['data'].to_i + value)).to_s
+              @cache.put(key, d)
+              ValueReply % val
+            else
+              NotFoundReply
+            end)
+          when 'stats'
+            send_data(Error)
+          when 'flush_all'
+            send_data(@cache.flush_all ? OK : Error)
+          when 'version'
+            send_data(Error)
+          when 'quit'
+            close_connection_after_writing
+          else
+            send_data(Error)
           end
+        rescue
+          send_server_error($!)
         end
-        send_data(EndReply)
-      when 'set'
-        SetCommand.match(ss.scan_until(/\r\n/))
-        (key, flags, exptime, bytes, noreply) = [$1, $2, process_time($3), $4, !$5.nil?]
-        return unless validate_key(key)
-        send_data(@cache.put(key, {'flags' => flags, 'exptime' => exptime, 'data' => ss.rest[0, bytes.to_i]}) ?
-          StoredReply : NotStoredReply)
-      when 'add'
-        SetCommand.match(ss.scan_until(/\r\n/))
-        (key, flags, exptime, bytes, noreply) = [$1, $2, process_time($3), $4, !$5.nil?]
-        send_data(@cache.put_keep(key, {'flags' => flags, 'exptime' => exptime, 'data' => ss.rest[0, bytes.to_i]}) ?
-          StoredReply : NotStoredReply)
-      when 'replace'
-        SetCommand.match(ss.scan_until(/\r\n/))
-        (key, flags, exptime, bytes, noreply) = [$1, $2, process_time($3), $4, !$5.nil?]
-        send_data(@cache.put_over(key, {'flags' => flags, 'exptime' => exptime, 'data' => ss.rest[0, bytes.to_i]}) ?
-          StoredReply : NotStoredReply)
-      when 'append'
-        SetCommand.match(ss.scan_until(/\r\n/))
-        (key, flags, exptime, bytes, noreply) = [$1, $2, process_time($3), $4, !$5.nil?]
-        send_data(@cache.append(key, ss.rest[0, bytes.to_i]) ?
-          StoredReply : NotStoredReply)
-      when 'prepend'
-        SetCommand.match(ss.scan_until(/\r\n/))
-        (key, flags, exptime, bytes, noreply) = [$1, $2, process_time($3), $4, !$5.nil?]
-        send_data(@cache.prepend(key, ss.rest[0, bytes.to_i]) ?
-          StoredReply : NotStoredReply)
-      when 'cas'
-        # do something
-      when 'delete'
-        case ss.scan_until(/\r\n/)
-        when DeleteWithTimeoutCommand
-          (key, timeout) = [$1.chomp, process_time($2)]
-          return unless validate_key(key)
-          send_data(@cache.delete_expire(key, timeout) ?
-            DeletedReply : NotDeletedReply)
-        when DeleteCommand
-          (key, noreply) = [$1.chomp, !$2.nil?]
-          return unless validate_key(key)
-          send_data @cache.delete(key) ?
-            DeletedReply : NotDeletedReply
-        end
-      when 'delete_match'
-        DeleteMatchCommand.match(ss.scan_until(/\r\n/))
-        (key, noreply) = [$1.chomp, !$2.nil?]
-        return unless validate_key(key)
-        @cache.delete_match(key)
-        send_data(DeletedReply)
-      when 'incr', 'decr'
-        IncrementDecrementCommand.match(ss.scan_until(/\r\n/))
-        (key, value, noreply) = [$1, $2.to_i, !$3.nil?]
-        return unless validate_key(key)
-        send_data(if d = @cache.get(key)
-          value = -value if command == 'decr'
-          d['data'] = (val = (d['data'].to_i + value)).to_s
-          @cache.put(key, d)
-          ValueReply % val
-        else
-          NotFoundReply
-        end)
-      when 'stats'
-        send_data(Error)
-      when 'flush_all'
-        send_data(Error)
-      when 'version'
-        send_data(Error)
-      when 'quit'
-        send_data(Error)
-      else
-        send_data(Error)
       end
+      
     end
     
   end

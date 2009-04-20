@@ -1,52 +1,20 @@
-require 'memcache'
-
 require 'benchmark'
+require 'lib/tokyo_cache_cow/mem_cache'
 
-cache = MemCache.new(MemCache::Server.new('127.0.0.1'))
+cache = TokyoCacheCow::MemCache.new('/tmp/tcc1')
 
-class MemCache
+describe 'memcache cache' do
   
-  def append( key, val, exptime=0 )
-    raise MemCacheError, "no active servers" unless self.active?
-    raise MemCacheError, "readonly cache" if self.readonly?
-    rval = nil
-
-    @mutex.synchronize( Sync::EX ) {
-      rval = self.store( :append, key, val, exptime )
-    }
-
-    rval
+  before(:each) do
+    cache.flush_all.should == true
   end
-
-  def delete_match( key, time=nil )
-    raise MemCacheError, "no active servers" unless self.active?
-    raise MemCacheError, "readonly cache" if self.readonly?
-    svr = nil
-
-    res = @mutex.synchronize( Sync::EX ) {
-      svr = self.get_server( key )
-      cachekey = self.make_cache_key( key )
-
-      self.add_stat( :delete_match ) do
-        cmd = "delete_match %s%s" % [ cachekey, time ? " #{time.to_i}" : "" ]
-        self.send( svr => cmd )
-      end
-    }
-
-		res && res[svr] && res[svr].blocks[0].cmd == "DELETED\r\n"
-  end
-  
-end
-
-
-describe 'memcache server' do
 
   it "should add" do
     cache.get('added_key').should == nil
-    cache.add('added_key','zig')
-    cache.get('added_key').should == 'zig'
+    cache.add('added_key','zig').should == true
+    cache.get('added_key')[:value].should == 'zig'
     cache.add('added_key','ziglar')
-    cache.get('added_key').should == 'zig'
+    cache.get('added_key')[:value].should == 'zig'
   end
 
   it "should put & get" do
@@ -55,39 +23,39 @@ describe 'memcache server' do
     end
     
     100.times do |i|
-      cache.get("/blog/show/#{i}").should == "this is a big ol' blog post!!! #{i}"
+      cache.get("/blog/show/#{i}")[:value].should == "this is a big ol' blog post!!! #{i}"
     end
   end
   
   it "should delete" do
     cache.set("key-set-123","you should never see me")
-    cache.get("key-set-123").should == "you should never see me"
+    cache.get("key-set-123")[:value].should == "you should never see me"
     cache.delete("key-set-123")
     cache.get("key-set-123").should == nil
   end
   
   it "should delete (with expiry)" do
     cache.set('delete-with-expiry', 'hillbillies')
-    cache.get('delete-with-expiry').should == 'hillbillies'
-    cache.delete('delete-with-expiry', 3)
+    cache.get('delete-with-expiry')[:value].should == 'hillbillies'
+    cache.delete('delete-with-expiry', :expires => 3)
     cache.get('delete-with-expiry').should == nil
     cache.replace('delete-with-expiry', 'more hillbillies')
     cache.get('delete-with-expiry').should == nil
     sleep(5)
     cache.get('delete-with-expiry').should == nil
     cache.set('delete-with-expiry', 'more hillbillies')
-    cache.get('delete-with-expiry').should == 'more hillbillies'
+    cache.get('delete-with-expiry')[:value].should == 'more hillbillies'
   end
   
   it "should delete (with expiry) and set again" do
     cache.set('delete-with-expiry', 'hillbillies')
-    cache.get('delete-with-expiry').should == 'hillbillies'
+    cache.get('delete-with-expiry')[:value].should == 'hillbillies'
     cache.delete('delete-with-expiry', 3)
     cache.get('delete-with-expiry').should == nil
     cache.set('delete-with-expiry', 'more hillbillies')
-    cache.get('delete-with-expiry').should == 'more hillbillies'
+    cache.get('delete-with-expiry')[:value].should == 'more hillbillies'
     sleep(5)
-    cache.get('delete-with-expiry').should == 'more hillbillies'
+    cache.get('delete-with-expiry')[:value].should == 'more hillbillies'
   end
   
   it "should delete_match" do
@@ -145,7 +113,7 @@ describe 'memcache server' do
   end
 
   it "should expire" do
-    cache.set("expiring key","you should never see me", 1)
+    cache.set("expiring key","you should never see me", :expires => 1)
     sleep(3)
     cache.get("expiring key").should == nil
   end
@@ -155,26 +123,26 @@ describe 'memcache server' do
     cache.get("replacing-key").should == nil
     cache.set("replacing-key", "oldkey")
     cache.replace("replacing-key", "newkey")
-    cache.get("replacing-key").should == 'newkey'
+    cache.get("replacing-key")[:value].should == 'newkey'
   end
   
   it "should append" do
     cache.set("appending-key", "test1")
-    cache.get("appending-key").should == "test1"
+    cache.get("appending-key")[:value].should == "test1"
     cache.append("appending-key", "test2")
-    cache.get("appending-key").should == "test1test2"
+    cache.get("appending-key")[:value].should == "test1test2"
   end
   
   it "should incr" do
     cache.set("incr-key", 123)
     cache.incr("incr-key", 20).should == 143
-    cache.get("incr-key").should == 143
+    cache.get("incr-key")[:value].should == '143'
   end
   
   it "should decr" do
     cache.set("decr-key", 123)
     cache.decr("decr-key", 20).should == 103
-    cache.get("decr-key").should == 103
+    cache.get("decr-key")[:value].should == '103'
   end
   
 end

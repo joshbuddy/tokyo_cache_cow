@@ -5,37 +5,49 @@ class TokyoCacheCow
 
     include TokyoCabinet
 
-    def get(key)
-      d = @cache.get(key)
-      if d
-        d['exptime'] = d['exptime'].to_i
-        d['flags'] = d['flags'].to_i
+    def process_time(time)
+      time = case time_i = Integer(time)
+      when 0: '0'
+      when 1..2592000: (Time.now.to_i + time_i).to_s
+      else time
       end
-      
-      if d
-        if d['expires']
-          if d['expires'].to_i < Time.now.to_i
-            nil
-          else
-            delete(key)
-            nil
-          end
-        elsif d['exptime'] == 0 || d['exptime'] > Time.now.to_i
-          d
-        else
+    end
+    
+    def flush_all
+      @cache.vanish
+    end
+
+    def get(key, cas = nil)
+      if (data = @cache.get(key)) && data['expired']
+        nil
+      elsif data
+        expires = data['expires'] && data['expires'].to_i
+        flags = data['flags'] && data['flags'].to_i
+        if expires != 0 && expires < Time.now.to_i
           delete(key)
           nil
+        else
+          { :value => data['value'], :expires => expires, :flags => flags }
         end
-      else
-        delete(key)
-        nil
       end 
     end
     
+    def incr(key, value)
+      if data = get(key)
+        new_value = data[:value].to_i + value
+        set(key, new_value.to_s, :expires => data[:expires], :flags => data[:flags])
+        new_value
+      end
+    end
+    
+    def decr(key, value)
+      incr(key, -value)
+    end
+    
     def append(key, val)
-      if d = @cache.get(key)
-        d['data'] << val
-        @cache.put(key, d)
+      if data = get(key)
+        data[:value] << val
+        set(key, data[:value], :expires => data[:expires], :flags => data[:flags])
         true
       else
         false
@@ -43,39 +55,49 @@ class TokyoCacheCow
     end
 
     def prepend(key, val)
-      if d = @cache.get(key)
-        d['data'][0,0] = val
-        @cache.put(key, d)
+      if data = @cache.get(key)
+        data[:data][0,0] = val
+        put(key, data[:value], :expires => data[:expires], :flags => data[:flags])
         true
       else
         false
       end
     end
     
-    def put(key, data)
-      @cache.put(key, data)
+    def generate_data_hash(value, options)
+      expires = options[:expires] && options[:expires].to_s || '0'
+      flags = options[:flags] && options[:flags].to_s || '0'
+      { 'value' => value, 'expires' => process_time(expires), 'flags' => flags }
+    end
+    
+    def time_expired?(time)
+      time == '0' ? false : time.to_i < Time.now.to_i
+    end
+    
+    
+    def set(key, value, options = {})
+      @cache.put(key, generate_data_hash(value, options))
     end
 
-    def put_keep(key, data)
-      @cache.putkeep(key, data)
-    end
-
-    def put_over(key, data)
-      if d = @cache.get(key)
-        if d['expires'] && d['expires'].to_i < Time.now.to_i
-          nil
-        else
-          @cache.put(key, data)
-        end
+    def add(key, value, options = {})
+      if data = @cache.get(key)
+        time_expired?(data[:expired]) ?
+          nil : @cache.putkeep(key, generate_data_hash(value, options))
+      else
+        @cache.putkeep(key, generate_data_hash(value, options))
       end
     end
 
-    def delete(key)
-      @cache.delete(key)
+    def replace(key, value, options = {})
+      get(key) ? @cache.put(key, generate_data_hash(value, options)) : nil
     end
 
-    def delete_expire(key, timeout)
-      d = get(key) and put(key, d.merge({'expires' => timeout}))
+    def delete(key, opts = {})
+      if opts[:expires] && opts[:expires] != 0
+        @cache.put(key, {'expired' => process_time(opts[:expires])})
+      else
+        @cache.out(key)
+      end
     end
 
     def delete_match(match)
