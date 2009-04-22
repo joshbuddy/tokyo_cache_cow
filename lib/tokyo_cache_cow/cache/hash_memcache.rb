@@ -10,7 +10,7 @@ class TokyoCacheCow
         end
       end
 
-      def initialize
+      def initialize(file)
         @cache = {}
       end
       

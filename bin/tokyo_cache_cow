@@ -4,7 +4,7 @@ require 'optparse'
 $:.unshift File.join(File.dirname(__FILE__), '..')
 require 'lib/tokyo_cache_cow'
 
-options = {:port => '11211', :host => '0.0.0.0', :provider => 'lib/tokyo_cache_cow/providers'}
+options = {:port => '11211', :host => '0.0.0.0', :provider => 'tokyo_cabinet', :file => '/tmp/cache'}
 OptionParser.new do |opts|
   opts.banner = "Usage: runner.rb [options]"
 
@@ -20,14 +20,23 @@ OptionParser.new do |opts|
     options[:provider] = v
   end
 
+  opts.on("-f[OPTIONAL]", "--file", "File (default: #{options[:file]})") do |v|
+    options[:file] = v
+  end
+
   opts.on_tail("-h", "--help", "Show this help message.") { puts opts; exit }
 
 end.parse!
 
 trap("INT") { EM.stop; puts "moooooooo ya later" }
-require options[:provider]
 
-cache = TokyoCacheCow::Providers.provide_cache
+if File.exists?(File.join(File.dirname(__FILE__), options[:provider]))
+  require File.join(File.dirname(__FILE__), options[:provider])
+  cache = $cache
+else
+  require 'lib/tokyo_cache_cow/cache'
+  cache = TokyoCacheCow::Cache.const_get("#{options[:provider]}_memcache".split('_').map{|e| e.capitalize}.join.to_sym).new(options[:file])
+end
 
 puts "Starting the tokyo cache cow"
 EM.run do 
