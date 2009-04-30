@@ -16,6 +16,7 @@ class TokyoCacheCow
         :class                => 'TokyoCacheCow::Cache::TokyoCabinetMemcache',
         :require              => [],
         :file                 => '/tmp/tcc-cache',
+        :pid                  => '/tmp/tcc.pid',
         :daemonize            => false
       }
       
@@ -53,6 +54,10 @@ class TokyoCacheCow
           options[:daemonize] = true
         end
 
+        opts.on("-P[OPTIONAL]", "--pid", "Pid file (default: #{options[:pid]})") do |v|
+          options[:pid] = true
+        end
+
         opts.on_tail("-h", "--help", "Show this help message.") { puts opts; exit }
 
       end
@@ -84,6 +89,7 @@ class TokyoCacheCow
       end
       
       if @options[:daemonize]
+        File.open(options[:pid], 'w') {|f| f << pid}
         Process.detach(pid)
       else
         trap("INT") { }
