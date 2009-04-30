@@ -2,9 +2,9 @@ require 'benchmark'
 require 'lib/tokyo_cache_cow/cache'
 
 {
-  'tokyo cabinet memcache' => TokyoCacheCow::Cache::TokyoCabinetMemcache.new('/tmp/tcc1'),
-  'hash memcache' => TokyoCacheCow::Cache::HashMemcache.new(nil),
-  'file memcache' => TokyoCacheCow::Cache::FileMemcache.new('/tmp/filecache')
+  'tokyo cabinet memcache' => TokyoCacheCow::Cache::TokyoCabinetMemcache.new(:file => '/tmp/tcc1'),
+  'hash memcache' => TokyoCacheCow::Cache::HashMemcache.new,
+  'file memcache' => TokyoCacheCow::Cache::FileMemcache.new(:file => '/tmp/filecache')
 }.each do |name, cache|
 
   describe name do

@@ -66,11 +66,11 @@ But <i>other_key</i> is still peachy.
 === Server
 
 
-  >> ruby -rubygems runner.rb --help
+  >> tokyo_cache_cow --help
 
 --------------
 
-  Usage: runner.rb [options]
+  Usage: tokyo_cache_cow [options]
     -p, --port[OPTIONAL]             Port (default: 11211)
     -h, --host[OPTIONAL]             Host (default: 0.0.0.0)
         --help                       Show this help message.

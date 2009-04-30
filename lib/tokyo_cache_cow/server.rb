@@ -4,6 +4,8 @@ require 'eventmachine'
 class TokyoCacheCow
   class Server < EventMachine::Connection
     
+    DefaultPort = 11211
+    
     Terminator = "\r\n"
     
     #set

@@ -108,9 +108,10 @@ class TokyoCacheCow
         q.searchout
       end
 
-      def initialize(file)
+      def initialize(options = {})
         @cache = TDB::new # hash database
-        @cache.open(file, TDB::OWRITER | TDB::OCREAT | TDB::OTRUNC)
+        options[:file] ?
+          @cache.open(options[:file], TDB::OWRITER | TDB::OCREAT | TDB::OTRUNC) : raise('must supply file')
         @cache.setxmsiz(500_000_000)
       end
 

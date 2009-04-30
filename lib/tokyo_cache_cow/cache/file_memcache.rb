@@ -1,6 +1,7 @@
 require 'yaml'
 require 'fileutils'
 require 'cgi'
+
 class TokyoCacheCow
   class Cache
     class FileMemcache < Base
@@ -13,10 +14,9 @@ class TokyoCacheCow
         end
       end
 
-      def initialize(path)
-        @path = path
-        FileUtils.rm_rf(@path)
-        FileUtils.mkdir_p(@path)
+      def initialize(options = {})
+        @path = options[:file] or raise('must supply file')
+        flush_all
       end
       
       def time_expired?(time)
@@ -70,7 +70,9 @@ class TokyoCacheCow
       end
       
       def flush_all
-        FileUtils.rm(Dir.glob(File.join(@path, '*'))) and true
+        FileUtils.rm_rf(@path)
+        FileUtils.mkdir_p(@path)
+        true
       end
 
       def delete(key, expires = nil)
