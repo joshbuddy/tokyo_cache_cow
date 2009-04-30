@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby -rubygems
 # Tokyo cache cow command line interface script.
 # Run <tt>tokyo_cache_cow -h</tt> to get more usage.
 require File.dirname(__FILE__) + '/../lib/tokyo_cache_cow'

@@ -6,7 +6,6 @@ require 'lib/tokyo_cache_cow/cache'
   'hash memcache' => TokyoCacheCow::Cache::HashMemcache.new,
   'file memcache' => TokyoCacheCow::Cache::FileMemcache.new(:file => '/tmp/filecache')
 }.each do |name, cache|
-
   describe name do
   
     before(:each) do

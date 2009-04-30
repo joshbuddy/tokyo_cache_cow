@@ -8,7 +8,6 @@ class TokyoCacheCow
     
     def initialize(argv)
       @argv = argv
-      
       # Default options values
       @options = {
         :chdir                => Dir.pwd,
@@ -16,7 +15,8 @@ class TokyoCacheCow
         :port                 => Server::DefaultPort,
         :class                => 'TokyoCacheCow::Cache::TokyoCabinetMemcache',
         :require              => [],
-        :file                 => '/tmp/tcc-cache'
+        :file                 => '/tmp/tcc-cache',
+        :daemonize            => false
       }
       
       parse!
@@ -37,7 +37,7 @@ class TokyoCacheCow
           options[:address] = v
         end
 
-        opts.on("-c[OPTIONAL]", "--class", "Cache provider class (default: #{options[:class]}") do |v|
+        opts.on("-c[OPTIONAL]", "--class", "Cache provider class (default: #{options[:class]})") do |v|
           options[:provider] = v
         end
 
@@ -47,6 +47,10 @@ class TokyoCacheCow
 
         opts.on("-f[OPTIONAL]", "--file", "File (default: #{options[:file]})") do |v|
           options[:file] = v
+        end
+
+        opts.on("-d[OPTIONAL]", "--daemonize", "Daemonize (default: #{options[:daemonize]})") do |v|
+          options[:daemonize] = true
         end
 
         opts.on_tail("-h", "--help", "Show this help message.") { puts opts; exit }
@@ -59,23 +63,34 @@ class TokyoCacheCow
     end
     
     def start!
-      trap("INT") { EM.stop; puts "\nmoooooooo ya later" }
+      @options[:require].each {|r| require r}
       
-      options[:require].each {|r| require r}
-      
-      clazz = options[:class].to_s.split('::').inject(Kernel) do |parent, mod|
+      clazz = @options[:class].to_s.split('::').inject(Kernel) do |parent, mod|
         parent.const_get(mod)
       end
       
-      cache = clazz.new(:file => options[:file])
-
-      puts "Starting the tokyo cache cow #{options[:address]} #{options[:port]}"
-      EM.run do 
-        EM.start_server(options[:address], options[:port], TokyoCacheCow::Server) do |c|
-          c.cache = cache
+      
+      address = @options[:address]
+      port = @options[:port]
+      puts "Starting the tokyo cache cow #{address} #{port}"
+      pid = EM.fork_reactor do
+        cache = clazz.new(:file => @options[:file])
+        trap("INT") { EM.stop; puts "\nmoooooooo ya later"; exit(0)}
+        EM.run do
+          EM.start_server(address, port, TokyoCacheCow::Server) do |c|
+            c.cache = cache
+          end
         end
       end
       
+      if @options[:daemonize]
+        Process.detach(pid)
+      else
+        trap("INT") { }
+        Process.wait(pid)
+      end
+      
+      pid
     end
     
   end
