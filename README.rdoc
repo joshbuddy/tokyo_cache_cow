@@ -68,12 +68,17 @@ But <i>other_key</i> is still peachy.
 
   >> tokyo_cache_cow --help
 
---------------
-
   Usage: tokyo_cache_cow [options]
-    -p, --port[OPTIONAL]             Port (default: 11211)
-    -h, --host[OPTIONAL]             Host (default: 0.0.0.0)
-        --help                       Show this help message.
+  Options:
+      -p, --port[OPTIONAL]             Port (default: 11211)
+      -a, --address[OPTIONAL]          Address (default: 0.0.0.0)
+      -c, --class[OPTIONAL]            Cache provider class (default: TokyoCacheCow::Cache::TokyoCabinetMemcache)
+      -r, --require[OPTIONAL]          require
+      -f, --file[OPTIONAL]             File (default: /tmp/tcc-cache)
+      -d, --daemonize[OPTIONAL]        Daemonize (default: false)
+      -P, --pid[OPTIONAL]              Pid file (default: /tmp/tcc.pid)
+      -m, --matcher[OPTIONAL]          Special flag for doing matched deletes (not enabled by default)
+      -h, --help                       Show this help message.
 
 === Client
 
