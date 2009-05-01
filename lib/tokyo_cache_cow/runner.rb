@@ -10,14 +10,15 @@ class TokyoCacheCow
       @argv = argv
       # Default options values
       @options = {
-        :chdir                => Dir.pwd,
-        :address              => '0.0.0.0',
-        :port                 => Server::DefaultPort,
-        :class                => 'TokyoCacheCow::Cache::TokyoCabinetMemcache',
-        :require              => [],
-        :file                 => '/tmp/tcc-cache',
-        :pid                  => '/tmp/tcc.pid',
-        :daemonize            => false
+        :chdir                 => Dir.pwd,
+        :address               => '0.0.0.0',
+        :port                  => Server::DefaultPort,
+        :class                 => 'TokyoCacheCow::Cache::TokyoCabinetMemcache',
+        :require               => [],
+        :file                  => '/tmp/tcc-cache',
+        :pid                   => '/tmp/tcc.pid',
+        :special_delete_prefix => nil,
+        :daemonize             => false
       }
       
       parse!
@@ -58,6 +59,10 @@ class TokyoCacheCow
           options[:pid] = true
         end
 
+        opts.on("-m[OPTIONAL]", "--matcher", "Special flag for doing matched deletes (not enabled by default)") do |v|
+          options[:special_delete_char] = v
+        end
+
         opts.on_tail("-h", "--help", "Show this help message.") { puts opts; exit }
 
       end
@@ -77,6 +82,7 @@ class TokyoCacheCow
       
       address = @options[:address]
       port = @options[:port]
+      special_delete_char = @options[:special_delete_char]
       puts "Starting the tokyo cache cow #{address} #{port}"
       pid = EM.fork_reactor do
         cache = clazz.new(:file => @options[:file])
@@ -84,6 +90,7 @@ class TokyoCacheCow
         EM.run do
           EM.start_server(address, port, TokyoCacheCow::Server) do |c|
             c.cache = cache
+            c.special_delete_char = special_delete_char if special_delete_char
           end
         end
       end

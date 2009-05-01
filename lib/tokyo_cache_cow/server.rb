@@ -44,7 +44,7 @@ class TokyoCacheCow
     
     TerminatorRegex = /\r\n/
     
-    attr_accessor :cache
+    attr_accessor :cache, :special_delete_char
     
     def send_client_error(message = "invalid arguments")
       send_data(ClientError % message.to_s)
@@ -70,7 +70,6 @@ class TokyoCacheCow
     
     def receive_data(data)
       ss = StringScanner.new(data)
-      
       while part = ss.scan_until(TerminatorRegex)
         begin
           command_argument_separator_index = part.index(/\s/)
@@ -135,8 +134,14 @@ class TokyoCacheCow
             when DeleteCommand
               (key, noreply) = [$1.chomp, !$2.nil?]
               next unless validate_key(key)
-              send_data @cache.delete(key) ?
-                DeletedReply : NotDeletedReply
+              if special_delete_char && key.index(special_delete_char) == 0
+                key.slice!(0,special_delete_char.size)
+                @cache.delete_match(key)
+                send_data(DeletedReply)
+              else
+                send_data @cache.delete(key) ?
+                  DeletedReply : NotDeletedReply
+              end
             end
           when 'delete_match'
             DeleteMatchCommand.match(args)
