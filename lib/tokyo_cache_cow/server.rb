@@ -68,8 +68,23 @@ class TokyoCacheCow
       end
     end
     
+    def set_incomplete(ss, length, part)
+      if ss.rest.size < length
+        if @body
+          @body << ss.string
+        else
+          @body = part
+          @body << ss.rest
+        end
+        true
+      else
+        false
+      end
+    end
+    
     def receive_data(data)
-      ss = StringScanner.new(data)
+      ss = StringScanner.new(@body ? @body << data : data)
+      
       while part = ss.scan_until(TerminatorRegex)
         begin
           command_argument_separator_index = part.index(/\s/)
@@ -95,32 +110,46 @@ class TokyoCacheCow
             SetCommand.match(args) or (send_client_error and next)
             (key, flags, expires, bytes, noreply) = [$1, Integer($2), Integer($3), Integer($4), !$5.nil?]
             next unless validate_key(key)
+            if ss.rest.size < bytes
+              @bytes_left = bytes - ss.rest.size
+            end
+            
+            return if set_incomplete(ss, bytes, part)
             send_data(@cache.set(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
               StoredReply : NotStoredReply)
+            @body = nil
             ss.pos += bytes + 2 
           when 'add'
             SetCommand.match(args)
             (key, flags, expires, bytes, noreply) = [$1, $2.to_i, $3.to_i, $4, !$5.nil?]
+            return if set_incomplete(ss, bytes, part)
             send_data(@cache.add(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
               StoredReply : NotStoredReply)
+            @body = nil
             ss.pos += bytes + 2 
           when 'replace'
             SetCommand.match(args)
             (key, flags, expires, bytes, noreply) = [$1, $2.to_i, $3.to_i, $4, !$5.nil?]
+            return if set_incomplete(ss, bytes, part)
             send_data(@cache.replace(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
               StoredReply : NotStoredReply)
+            @body = nil
             ss.pos += bytes + 2 
           when 'append'
             SetCommand.match(args)
             (key, flags, expires, bytes, noreply) = [$1, $2.to_i, $3.to_i, $4, !$5.nil?]
+            return if set_incomplete(ss, bytes, part)
             send_data(@cache.append(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
               StoredReply : NotStoredReply)
+            @body = nil
             ss.pos += bytes + 2 
           when 'prepend'
             SetCommand.match(args)
             (key, flags, expires, bytes, noreply) = [$1, $2.to_i, $3.to_i, $4, !$5.nil?]
+            return if set_incomplete(ss, bytes, part)
             send_data(@cache.prepend(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
               StoredReply : NotStoredReply)
+            @body = nil
             ss.pos += bytes + 2 
           when 'cas'
             # do something
@@ -173,6 +202,8 @@ class TokyoCacheCow
             send_data(Error)
           end
         rescue
+          puts $!
+          puts $!.backtrace
           send_server_error($!)
         end
       end
