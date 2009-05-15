@@ -110,9 +110,14 @@ class TokyoCacheCow
 
       def initialize(options = {})
         @cache = TDB::new # hash database
-        options[:file] ?
-          @cache.open(options[:file], TDB::OWRITER | TDB::OCREAT | TDB::OTRUNC) : raise('must supply file')
-        @cache.setxmsiz(500_000_000)
+        raise('must supply file') unless options[:file]
+        if @cache.open(options[:file], TDB::OWRITER | TDB::OCREAT | TDB::OTRUNC)
+          @cache.setxmsiz(500_000_000)
+        else
+          puts @cache.ecode
+          puts @cache.errmsg(@cache.ecode)
+          raise
+        end
       end
 
     end
