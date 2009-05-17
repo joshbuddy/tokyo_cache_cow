@@ -18,8 +18,8 @@ describe 'memcache server' do
   end
   
   it "should get & set" do
-    cache.set('asd', "qweqweasd" * 2000)
-    cache.get('asd').should == "qweqweasd" * 2000
+    cache.set('asd', "qweqweasd" * 20000)
+    cache.get('asd').should == "qweqweasd" * 20000
   end
   
   it "should delete" do

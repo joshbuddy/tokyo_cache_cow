@@ -2,7 +2,7 @@ require 'strscan'
 require 'eventmachine'
 
 class TokyoCacheCow
-  class Server < EventMachine::Connection
+  class Server < EventMachine::Protocols::LineAndTextProtocol
     
     DefaultPort = 11211
     
@@ -70,6 +70,7 @@ class TokyoCacheCow
     
     def set_incomplete(ss, length, part)
       if ss.rest.size < length
+        @expected_size = length + ss.pre_match.size + 2
         if @body
           @body << ss.string
         else
@@ -83,7 +84,12 @@ class TokyoCacheCow
     end
     
     def receive_data(data)
-      ss = StringScanner.new(@body ? @body << data : data)
+      if @body
+        @body << data
+        return if @body.size < @expected_size
+      end
+      
+      ss = StringScanner.new(@body || data)
       
       while part = ss.scan_until(TerminatorRegex)
         begin
@@ -110,10 +116,6 @@ class TokyoCacheCow
             SetCommand.match(args) or (send_client_error and next)
             (key, flags, expires, bytes, noreply) = [$1, Integer($2), Integer($3), Integer($4), !$5.nil?]
             next unless validate_key(key)
-            if ss.rest.size < bytes
-              @bytes_left = bytes - ss.rest.size
-            end
-            
             return if set_incomplete(ss, bytes, part)
             send_data(@cache.set(key, ss.rest[0, bytes.to_i], :flags => flags, :expires => expires) ?
               StoredReply : NotStoredReply)
