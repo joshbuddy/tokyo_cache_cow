@@ -108,6 +108,12 @@ class TokyoCacheCow
         q.searchout
       end
 
+      def get_match(match)
+        q = TDBQRY.new(@cache)
+        q.addcond('', TDBQRY::QCSTRINC, match)
+        q.search
+      end
+
       def initialize(options = {})
         @cache = TDB::new # hash database
         raise('must supply file') unless options[:file]

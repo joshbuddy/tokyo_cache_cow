@@ -30,9 +30,8 @@ describe 'memcache server' do
 
   after(:all) do
     Process.kill('INT', @pid)
+    sleep(1)
   end
-  
-  
 end
 
 describe 'memcache server with special delete support' do
@@ -64,6 +63,7 @@ describe 'memcache server with special delete support' do
   
   after(:all) do
     Process.kill('INT', @pid)
+    sleep(1)
   end
   
   

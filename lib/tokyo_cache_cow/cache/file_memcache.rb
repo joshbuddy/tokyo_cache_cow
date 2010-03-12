@@ -43,6 +43,10 @@ class TokyoCacheCow
         FileUtils.rm Dir.glob(File.join(@path, "*#{CGI.escape(key)}*"))
       end
 
+      def get_match(key)
+        Dir.glob(File.join(@path, "*#{CGI.escape(key)}*")).map{|d| d}.map{|f| File.basename(f)}
+      end
+
       def replace(key, value, options = {})
         set(key, value, options) if File.exists?(path_for_key(key))
       end

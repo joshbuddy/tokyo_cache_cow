@@ -101,15 +101,23 @@ class TokyoCacheCow
             keys = args.split(/\s+/)
             keys.each do |k|
               next unless validate_key(k)
-              if data = @cache.get(k)
-                if command == 'get'
-                  send_data(GetValueReply % [k, data[:flags], data[:value].size])
-                else
-                  send_data(CasValueReply % [k, data[:flags], data[:value].size, data[:value].hash])
+              
+              puts "in get!"
+              
+              if k =~ /^average-/
+                puts "matched!!"
+              else
+                if data = @cache.get(k)
+                  if command == 'get'
+                    send_data(GetValueReply % [k, data[:flags], data[:value].size])
+                  else
+                    send_data(CasValueReply % [k, data[:flags], data[:value].size, data[:value].hash])
+                  end
+                  send_data(data[:value])
+                  send_data(Terminator)
                 end
-                send_data(data[:value])
-                send_data(Terminator)
               end
+              
             end
             send_data(EndReply)
           when 'set'

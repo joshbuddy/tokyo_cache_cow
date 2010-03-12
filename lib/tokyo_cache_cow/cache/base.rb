@@ -10,6 +10,12 @@ class TokyoCacheCow
         end
       end
       
+      def average_match(match)
+        average_keys = get_match(match)
+        values = average_keys.map{|ak| get(ak)}.map{|v| Integer(v[:value]) rescue nil}.compact
+        values.inject(0.0) { |sum, el| sum + el } / values.size
+      end
+      
     end
   end
 end

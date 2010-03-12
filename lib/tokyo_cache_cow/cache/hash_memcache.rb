@@ -38,6 +38,10 @@ class TokyoCacheCow
         @cache.delete_if{ |key, value| key.index(key) }
       end
 
+      def get_match(match)
+        @cache.keys.select{ |key| key.index(key) }
+      end
+
       def replace(key, value, options = {})
         set(key, value, options) if @cache.key?(key)
       end
