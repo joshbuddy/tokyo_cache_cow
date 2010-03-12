@@ -101,8 +101,8 @@ class TokyoCacheCow
             keys = args.split(/\s+/)
             keys.each do |k|
               next unless validate_key(k)
-              if k =~ /^average-(.*)/
-                average = @cache.average_match($1).to_s
+              if k =~ /^(average|sum|count|min|max)-(.*)/
+                average = @cache.send(:"#{$1}_match", $2).to_s
                 send_data(GetValueReply % [k, "0", average.size])
                 send_data(average)
                 send_data(Terminator)
