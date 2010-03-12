@@ -1,6 +1,6 @@
 = Tokyo Cache Cow
 
-Tokyo Cache Cow is MemCache protocol speaking cache server. It offers the ability to delete keys based on a substring.
+Tokyo Cache Cow is MemCache protocol speaking cache server. It offers the ability to delete keys based on a substring as well as aggregate functions based on substrings.
 
 == Motivation
 
@@ -59,6 +59,21 @@ But <i>other_key</i> is still peachy.
 
   >> Rails.cache.read('other_key')
   => "other_value"
+
+=== Aggregate functions
+
+You can invoke aggregates by using the prefixes <tt>average-</tt>, <tt>count-</tt>, <tt>sum-</tt>, <tt>min-</tt> and <tt>max-</tt>.
+
+  >> Rails.cache.write('hello1', '1')
+  => true
+  >> Rails.cache.write('hello2', '2')
+  => true
+  >> Rails.cache.write('hello3', '3')
+  => true
+  >> Rails.cache.read('average-hello')
+  => "2.0"
+  >> Rails.cache.read('sum-hello')
+  => "6.0"
 
 
 == Usage
