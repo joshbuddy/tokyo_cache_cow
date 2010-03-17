@@ -9,8 +9,8 @@ class TokyoCacheCow
         else time
         end
       end
-      
-      def average_match(match)
+
+      def avg_match(match)
         values = numeric_values_match(match)
         values.inject(0.0) { |sum, el| sum + el } / values.size
       end

@@ -62,7 +62,7 @@ But <i>other_key</i> is still peachy.
 
 === Aggregate functions
 
-You can invoke aggregates by using the prefixes <tt>average-</tt>, <tt>count-</tt>, <tt>sum-</tt>, <tt>min-</tt> and <tt>max-</tt>.
+You can invoke aggregates by using the functions <tt>avg()</tt>, <tt>count()</tt>, <tt>sum()</tt>, <tt>min()</tt> and <tt>max()</tt>.
 
   >> Rails.cache.write('hello1', '1')
   => true
@@ -70,9 +70,9 @@ You can invoke aggregates by using the prefixes <tt>average-</tt>, <tt>count-</t
   => true
   >> Rails.cache.write('hello3', '3')
   => true
-  >> Rails.cache.read('average-hello')
+  >> Rails.cache.read('avg(hello)')
   => "2.0"
-  >> Rails.cache.read('sum-hello')
+  >> Rails.cache.read('sum(hello)')
   => "6.0"
 
 
