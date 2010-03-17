@@ -47,7 +47,7 @@ class TokyoCacheCow
       
       def numeric_values_match(match)
         numeric_keys = get_match(match)
-        numeric_keys.map{|ak| get(ak)}.map{|v| Integer(v[:value]) rescue nil}.compact
+        numeric_keys.map{|ak| get(ak)}.map{|v| Integer(unmarshal(v[:value])) rescue nil}.compact
       end
       
     end
