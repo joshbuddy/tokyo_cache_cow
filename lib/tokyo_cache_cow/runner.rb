@@ -19,7 +19,7 @@ class TokyoCacheCow
         :pid                   => '/tmp/tcc.pid',
         :special_delete_prefix => nil,
         :daemonize             => false,
-        :marshalling           => false
+        :marshalling           => true
       }
       
       parse!
@@ -64,8 +64,8 @@ class TokyoCacheCow
           options[:special_delete_char] = v
         end
 
-        opts.on("-M[=OPTIONAL]", "--marshalling", "Enable/disable marshalling of values") do |v|
-          options[:marshalling] = true
+        opts.on("-M[=OPTIONAL]", "--marshalling", "Disable marshalling of values") do |v|
+          options[:marshalling] = false
         end
 
         opts.on_tail("-h", "--help", "Show this help message.") { puts opts; exit }
