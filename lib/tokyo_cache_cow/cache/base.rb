@@ -2,6 +2,16 @@ class TokyoCacheCow
   class Cache
     class Base
       
+      attr_accessor :marshalling_enabled
+      
+      def marshal(val)
+        marshalling_enabled ? Marshal.dump(val) : val
+      end
+      
+      def unmarshal(val)
+        marshalling_enabled ? Marshal.load(val) : val
+      end
+      
       def process_time(time)
         time = case time
         when 0, nil: 0

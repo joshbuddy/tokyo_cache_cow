@@ -88,12 +88,12 @@ class TokyoCacheCow
       end
       
       def get_raw(key)
-        File.exists?(path_for_key(key)) ? YAML::load( File.open( path_for_key(key) ) ) : nil
+        File.exists?(path_for_key(key)) ? unmarshal(YAML::load( File.open( path_for_key(key)))) : nil
       end
       
       def set_raw(key, data)
         File.open(path_for_key(key), 'w') do |out|
-          YAML.dump(data, out)
+          YAML.dump(data, marshal(out))
         end
       end
       

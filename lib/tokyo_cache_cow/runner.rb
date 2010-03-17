@@ -18,7 +18,8 @@ class TokyoCacheCow
         :file                  => '/tmp/tcc-cache',
         :pid                   => '/tmp/tcc.pid',
         :special_delete_prefix => nil,
-        :daemonize             => false
+        :daemonize             => false,
+        :marshalling           => false
       }
       
       parse!
@@ -56,11 +57,15 @@ class TokyoCacheCow
         end
 
         opts.on("-P[OPTIONAL]", "--pid", "Pid file (default: #{options[:pid]})") do |v|
-          options[:pid] = true
+          options[:pid] = v
         end
 
         opts.on("-m[OPTIONAL]", "--matcher", "Special flag for doing matched deletes (not enabled by default)") do |v|
           options[:special_delete_char] = v
+        end
+
+        opts.on("-M[=OPTIONAL]", "--marshalling", "Enable/disable marshalling of values") do |v|
+          options[:marshalling] = true
         end
 
         opts.on_tail("-h", "--help", "Show this help message.") { puts opts; exit }
@@ -79,13 +84,13 @@ class TokyoCacheCow
         parent.const_get(mod)
       end
       
-      
       address = @options[:address]
       port = @options[:port]
       special_delete_char = @options[:special_delete_char]
       puts "Starting the tokyo cache cow #{address} #{port}"
       pid = EM.fork_reactor do
         cache = clazz.new(:file => @options[:file])
+        cache.marshalling_enabled = 
         trap("INT") { EM.stop; puts "\nmoooooooo ya later"; exit(0)}
         EM.run do
           EM.start_server(address, port, TokyoCacheCow::Server) do |c|

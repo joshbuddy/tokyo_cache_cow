@@ -28,7 +28,7 @@ class TokyoCacheCow
             delete(key)
             nil
           else
-            { :value => data['value'], :expires => expires, :flags => flags }
+            { :value => unmarshal(data['value']), :expires => expires, :flags => flags }
           end
         end 
       end
@@ -68,7 +68,7 @@ class TokyoCacheCow
       def generate_data_hash(value, options)
         expires = options[:expires] && options[:expires].to_s || '0'
         flags = options[:flags] && options[:flags].to_s || '0'
-        { 'value' => value, 'expires' => process_time(expires), 'flags' => flags }
+        { 'value' => marshal(value), 'expires' => process_time(expires), 'flags' => flags }
       end
     
       def time_expired?(time)

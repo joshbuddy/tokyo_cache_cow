@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Joshua Hull"]
-  s.date = %q{2010-03-12}
+  s.date = %q{2010-03-17}
   s.default_executable = %q{tokyo_cache_cow}
   s.description = %q{}
   s.email = %q{joshbuddy@gmail.com}
@@ -28,7 +28,6 @@ Gem::Specification.new do |s|
     "lib/tokyo_cache_cow/cache/file_memcache.rb",
     "lib/tokyo_cache_cow/cache/hash_memcache.rb",
     "lib/tokyo_cache_cow/cache/tokyo_cabinet_memcache.rb",
-    "lib/tokyo_cache_cow/providers.rb",
     "lib/tokyo_cache_cow/runner.rb",
     "lib/tokyo_cache_cow/server.rb",
     "rails/init.rb",
@@ -51,9 +50,12 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
+      s.add_runtime_dependency(%q<eventmachine>, [">= 0"])
     else
+      s.add_dependency(%q<eventmachine>, [">= 0"])
     end
   else
+    s.add_dependency(%q<eventmachine>, [">= 0"])
   end
 end
 

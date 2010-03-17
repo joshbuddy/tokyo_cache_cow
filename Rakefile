@@ -11,6 +11,7 @@ begin
     s.authors = ["Joshua Hull"]
     s.files = FileList["[A-Z]*", "{lib,spec,rails,bin}/**/*"]
     s.executables = ['tokyo_cache_cow']
+    s.add_dependency 'eventmachine'
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError
