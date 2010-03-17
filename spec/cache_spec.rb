@@ -26,7 +26,7 @@ require 'lib/tokyo_cache_cow/cache'
       cache.set("session1-value3","13")
       cache.set("session1-value4","10")
       cache.set("session1-value5","14")
-      cache.average_match('session1').should == 12
+      cache.avg_match('session1').should == 12
     end
 
     it "should put & get" do
