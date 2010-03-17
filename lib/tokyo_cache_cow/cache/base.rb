@@ -22,27 +22,27 @@ class TokyoCacheCow
 
       def avg_match(match)
         values = numeric_values_match(match)
-        values.inject(0.0) { |sum, el| sum + el } / values.size
+        marshal(values.inject(0.0) { |sum, el| sum + el } / values.size)
       end
       
       def sum_match(match)
         values = numeric_values_match(match)
-        values.inject(0.0) { |sum, el| sum + el }
+        marshal(values.inject(0.0) { |sum, el| sum + el })
       end
       
       def count_match(match)
         values = numeric_values_match(match)
-        values.size
+        marshal(values.size)
       end
       
       def min_match(match)
         values = numeric_values_match(match)
-        values.min
+        marshal(values.min)
       end
       
       def max_match(match)
         values = numeric_values_match(match)
-        values.max
+        marshal(values.max)
       end
       
       def numeric_values_match(match)
