@@ -20,7 +20,7 @@ class TokyoCacheCow
 
       def generate_data_hash(value, options)
         {
-          :value => value,
+          :value => marshal(value),
           :expires => process_time(options[:expires] || 0),
           :flags => options[:flags] || 0
         }

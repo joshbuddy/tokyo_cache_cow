@@ -103,7 +103,7 @@ class TokyoCacheCow
               next unless validate_key(k)
               if special_match_char && k.index(special_match_char) == 0
                 k.slice!(0, special_match_char.size)
-                value = @cache.get_match(k).join(' ')
+                value = @cache.get_match_list(k)
                 send_data(GetValueReply % [k, "0", value.size])
                 send_data(value)
                 send_data(Terminator)

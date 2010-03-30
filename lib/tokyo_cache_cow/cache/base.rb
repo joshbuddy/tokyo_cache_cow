@@ -50,6 +50,10 @@ class TokyoCacheCow
         numeric_keys.map{|ak| get(ak)}.map{|v| Integer(unmarshal(v[:value])) rescue nil}.compact
       end
       
+      def get_match_list(match)
+        marshal(get_match(match).join(' '))
+      end
+      
     end
   end
 end
