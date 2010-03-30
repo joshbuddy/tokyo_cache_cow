@@ -60,8 +60,8 @@ class TokyoCacheCow
           options[:pid] = v
         end
 
-        opts.on("-m[OPTIONAL]", "--matcher", "Special flag for doing matched deletes (not enabled by default)") do |v|
-          options[:special_delete_char] = v
+        opts.on("-m[OPTIONAL]", "--matcher", "Special flag for doing matched deletes and gets (not enabled by default)") do |v|
+          options[:special_match_char] = v
         end
 
         opts.on("-M[=OPTIONAL]", "--marshalling", "Disable marshalling of values") do |v|
@@ -86,7 +86,7 @@ class TokyoCacheCow
       
       address = @options[:address]
       port = @options[:port]
-      special_delete_char = @options[:special_delete_char]
+      special_match_char = @options[:special_match_char]
       puts "Starting the tokyo cache cow #{address} #{port}"
       pid = EM.fork_reactor do
         cache = clazz.new(:file => @options[:file])
@@ -95,7 +95,7 @@ class TokyoCacheCow
         EM.run do
           EM.start_server(address, port, TokyoCacheCow::Server) do |c|
             c.cache = cache
-            c.special_delete_char = special_delete_char if special_delete_char
+            c.special_match_char = special_match_char if special_match_char
           end
         end
       end
