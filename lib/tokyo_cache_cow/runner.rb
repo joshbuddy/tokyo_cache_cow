@@ -41,7 +41,7 @@ class TokyoCacheCow
         end
 
         opts.on("-c[OPTIONAL]", "--class", "Cache provider class (default: #{options[:class]})") do |v|
-          options[:provider] = v
+          options[:class] = v
         end
 
         opts.on("-r[OPTIONAL]", "--require", "require") do |v|
@@ -90,7 +90,7 @@ class TokyoCacheCow
       puts "Starting the tokyo cache cow #{address} #{port}"
       pid = EM.fork_reactor do
         cache = clazz.new(:file => @options[:file])
-        cache.marshalling_enabled = 
+        cache.marshalling_enabled = options[:marshalling]
         trap("INT") { EM.stop; puts "\nmoooooooo ya later"; exit(0)}
         EM.run do
           EM.start_server(address, port, TokyoCacheCow::Server) do |c|
