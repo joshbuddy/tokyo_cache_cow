@@ -170,23 +170,26 @@ class TokyoCacheCow
           when 'cas'
             # do something
           when 'delete'
-            case args
-            when DeleteWithTimeoutCommand
-              (key, timeout, noreply) = [$1.chomp, $2, !$3.nil?]
-              next unless validate_key(key)
+            split_args = args.split(/\s+/)
+            (key, timeout, noreply) = case split_args.size
+            when 2
+              [split_args[0].chomp, 0, !split_args[1].nil?]
+            when 3
+              [split_args[0].chomp, split_args[1].to_i, !split_args[2].nil?]
+            else
+              (send_client_error and next)
+            end
+            next unless validate_key(key)
+            if special_match_char && key.index(special_match_char) == 0
+              key.slice!(0,special_match_char.size)
+              @cache.delete_match(key)
+              send_data(DeletedReply)
+            elsif timeout == 0
+              send_data @cache.delete(key) ?
+                DeletedReply : NotDeletedReply
+            else
               send_data(@cache.delete_expire(key, timeout) ?
                 DeletedReply : NotDeletedReply)
-            when DeleteCommand
-              (key, noreply) = [$1.chomp, !$2.nil?]
-              next unless validate_key(key)
-              if special_match_char && key.index(special_match_char) == 0
-                key.slice!(0,special_match_char.size)
-                @cache.delete_match(key)
-                send_data(DeletedReply)
-              else
-                send_data @cache.delete(key) ?
-                  DeletedReply : NotDeletedReply
-              end
             end
           when 'delete_match'
             DeleteMatchCommand.match(args)
