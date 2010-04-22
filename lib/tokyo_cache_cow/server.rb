@@ -185,7 +185,7 @@ class TokyoCacheCow
               @cache.delete_match(key)
               send_data(DeletedReply)
             else
-              send_data @cache.delete(key, :expires => timeout) ?
+              send_data @cache.delete(key, :expires => timeout || 0) ?
                 DeletedReply : NotDeletedReply
             end
           when 'delete_match'
