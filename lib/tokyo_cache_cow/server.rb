@@ -184,9 +184,12 @@ class TokyoCacheCow
               key.slice!(0,special_match_char.size)
               @cache.delete_match(key)
               send_data(DeletedReply)
-            else
-              send_data @cache.delete(key, :expires => timeout || 0) ?
+            elsif timeout == 0
+              send_data @cache.delete(key) ?
                 DeletedReply : NotDeletedReply
+            else
+              send_data(@cache.delete(key, :expires => timeout) ?
+                DeletedReply : NotDeletedReply)
             end
           when 'delete_match'
             DeleteMatchCommand.match(args)
