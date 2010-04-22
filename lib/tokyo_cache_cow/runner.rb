@@ -103,6 +103,7 @@ class TokyoCacheCow
       if @options[:daemonize]
         File.open(options[:pid], 'w') {|f| f << pid}
         Process.detach(pid)
+        Process.exit!(0)
       else
         trap("INT") { }
         Process.wait(pid)
